@@ -29,6 +29,7 @@ const Icon = ({ name, size = 20 }) => {
 };
 
 const repositories = [
+  { repo:'Panniantong/Agent-Reach', category:'AI Agent', api:'optional', free:'free', accent:'#8b5cf6', en:{name:'Agent Reach', purpose:'An open-source internet capability layer for AI agents. It installs, selects, health-checks, and routes upstream tools that let agents read and search websites, YouTube, GitHub, Twitter/X, Reddit, Facebook, Instagram, LinkedIn, RSS, and other supported internet sources.', why:'Agent Reach itself is open source and is designed around free or self-hosted upstream tools. Some platforms require an existing logged-in browser session, cookies, authentication, a proxy on servers, or other platform-specific setup.', idea:'Give a local AI agent one managed internet-access layer instead of manually wiring separate tools for websites, social networks, GitHub, YouTube, RSS, and search.'}, pt:{name:'Agent Reach', purpose:'Uma camada open source de acesso à internet para agentes de IA. Ela instala, seleciona, verifica e direciona ferramentas que permitem ao agente ler e pesquisar sites, YouTube, GitHub, Twitter/X, Reddit, Facebook, Instagram, LinkedIn, RSS e outras fontes suportadas.', why:'O Agent Reach é open source e foi criado para trabalhar com ferramentas gratuitas ou auto-hospedadas. Algumas plataformas exigem uma sessão já autenticada no navegador, cookies, autenticação, proxy em servidores ou outras configurações específicas.', idea:'Dar a um agente de IA local uma única camada gerenciada de internet em vez de configurar manualmente ferramentas separadas para sites, redes sociais, GitHub, YouTube, RSS e pesquisa.'} },
   { repo:'OpenHands/OpenHands', category:'Coding', api:'required', free:'mixed', accent:'#8b5cf6', en:{name:'OpenHands', purpose:'An AI software-development agent that can edit files, run commands, browse the web, and complete multi-step coding tasks.', why:'The project is open source, but strong cloud AI models normally charge by usage. Local models need capable hardware.', idea:'Build an autonomous starter-kit generator that creates a complete web app from a plain-language product brief.'}, pt:{name:'OpenHands', purpose:'Um agente de desenvolvimento com IA que edita arquivos, executa comandos, navega na web e conclui tarefas de programação em várias etapas.', why:'O projeto é open source, mas modelos fortes na nuvem normalmente cobram por uso. Modelos locais exigem bom hardware.', idea:'Criar um gerador autônomo de projetos que monte um aplicativo completo a partir de uma ideia escrita em linguagem simples.'}},
   { repo:'cline/cline', category:'Coding', api:'required', free:'mixed', accent:'#22c55e', en:{name:'Cline', purpose:'An open-source coding agent for VS Code with access to files, terminal commands, browser actions, and MCP tools.', why:'The extension is free. The connected AI provider may charge for tokens, while some local models can be used at no API cost.', idea:'Build a browser extension from scratch and let Cline create the interface, tests, documentation, and release workflow.'}, pt:{name:'Cline', purpose:'Um agente de programação open source para VS Code com acesso a arquivos, terminal, navegador e ferramentas MCP.', why:'A extensão é grátis. O provedor de IA conectado pode cobrar por tokens, enquanto alguns modelos locais não exigem API paga.', idea:'Criar uma extensão de navegador do zero e usar o Cline para montar a interface, testes, documentação e publicação.'}},
   { repo:'MoonshotAI/kimi-code', category:'Coding', api:'optional', free:'mixed', accent:'#facc15', en:{name:'Kimi Code CLI', purpose:'An open-source terminal coding agent from Moonshot AI. It can read and edit code, run shell commands, search files, fetch web pages, process video input, connect MCP tools, install plugins, use lifecycle hooks, and run parallel subagents.', why:'The Kimi Code CLI source code is free under the MIT license. To use its AI features, you must sign in with Kimi Code OAuth or connect a Moonshot AI Open Platform API key. Usage limits and possible charges depend on the account, model, and provider selected.', idea:'Build a worldwide app accelerator that watches a product demonstration video, studies an existing codebase, and creates a matching interface, features, tests, setup instructions, and technical documentation.'}, pt:{name:'Kimi Code CLI', purpose:'Um agente de programação open source para terminal, criado pela Moonshot AI. Ele lê e edita código, executa comandos, pesquisa arquivos, acessa páginas da web, analisa vídeos, conecta ferramentas MCP, instala plugins, utiliza hooks e executa subagentes em paralelo.', why:'O código do Kimi Code CLI é gratuito sob a licença MIT. Para usar os recursos de IA, é necessário entrar com o OAuth do Kimi Code ou conectar uma chave da Moonshot AI Open Platform. Os limites e possíveis custos dependem da conta, do modelo e do provedor escolhido.', idea:'Criar um acelerador mundial de aplicativos que analise um vídeo de demonstração, estude um projeto existente e produza uma interface semelhante, funcionalidades, testes, instruções de instalação e documentação técnica.'}},
@@ -451,6 +452,15 @@ function App() {
   const chooseCategory = (next) => {
     setCategory(next);
     setMenuOpen(false);
+
+    // After changing the sidebar filter, move the user directly to
+    // the repositories section so the selected results are visible.
+    window.requestAnimationFrame(() => {
+      document.getElementById('repositories')?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start',
+      });
+    });
   };
 
   return <div className="app-shell">
@@ -645,7 +655,7 @@ function App() {
           {filtered.map((item) => {
             const data = item[lang];
             const apiText = item.api === 'required' ? t.required : item.api === 'optional' ? t.optional : t.no;
-            return <a key={item.repo} className="repo-card" href={`https://github.com/${item.repo}`} target="_blank" rel="noreferrer" style={{ '--accent': item.accent }}>
+            return <a key={item.repo} id={`repo-${item.repo.replace(/[^a-zA-Z0-9_-]/g, '-')}`} className="repo-card" href={`https://github.com/${item.repo}`} target="_blank" rel="noreferrer" style={{ '--accent': item.accent }}>
               <div className="repo-top">
                 <div className="repo-logo"><Icon name="github" size={25}/></div>
                 <div className="repo-title"><span>{item.category}</span><h3>{data.name}</h3><code>{item.repo}</code></div>

@@ -1,0 +1,75 @@
+name: Add requested RepoVision tools once
+
+on:
+  push:
+    paths:
+      - '.github/workflows/add-requested-tools-once.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  update-catalog:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Update RepoVision catalog
+        shell: python
+        run: |
+          from pathlib import Path
+
+          path = Path('src/main.jsx')
+          text = path.read_text(encoding='utf-8')
+
+          # Point the existing YouTube automation card at the active/original repo.
+          text = text.replace('OleLehmann/youtube-automation-agent', 'darkzOGx/youtube-automation-agent')
+
+          lines = text.splitlines(keepends=True)
+          out = []
+
+          open_montage_repo = "  { repo:'calesthio/OpenMontage', category:'Video', api:'optional', free:'mixed', accent:'#ec4899', en:{name:'OpenMontage', purpose:'An open-source agentic video-production system for research, scripting, media generation, narration, subtitles, editing, music, stock footage, and final rendering through reusable pipelines and agent tools.', why:'The project is open source and can be self-hosted. Local workflows can use local tools and models, while some optional connected AI or media providers may require API keys, credits, or paid compute.', idea:'Build a local AI video studio that can move from research and script creation through media, voice, editing, and final rendering in one automated workflow.'}, pt:{name:'OpenMontage', purpose:'Um sistema open source de produção de vídeo com agentes para pesquisa, roteiro, geração de mídia, narração, legendas, edição, música, banco de mídia e renderização final por pipelines e ferramentas reutilizáveis.', why:'O projeto é open source e pode ser auto-hospedado. Fluxos locais podem usar ferramentas e modelos locais, enquanto alguns provedores opcionais de IA ou mídia podem exigir API, créditos ou processamento pago.', idea:'Criar um estúdio local de vídeo com IA que vá da pesquisa e roteiro até mídia, voz, edição e renderização final em um único fluxo automatizado.'}},\n"
+
+          notebook_repo = "  { repo:'VMSTE/notebooklm-web-importer', category:'Productivity', api:'no', free:'free', accent:'#6366f1', en:{name:'NotebookLM Web Importer', purpose:'An open-source Chrome extension for sending YouTube videos, playlists, channels, comments, web pages, selected text, files, and browser tabs into Google NotebookLM.', why:'The project is MIT-licensed and can be loaded as a browser extension without a paid API. It uses your existing Google and NotebookLM access, so review browser permissions before installing.', idea:'Create a research workflow that collects YouTube and web sources into NotebookLM so you can summarize, compare, organize, and query them as one knowledge base.'}, pt:{name:'NotebookLM Web Importer', purpose:'Uma extensão open source para Chrome que envia vídeos, playlists, canais e comentários do YouTube, páginas web, textos selecionados, arquivos e abas do navegador para o Google NotebookLM.', why:'O projeto usa licença MIT e pode ser carregado como extensão sem API paga. Ele usa seu acesso existente ao Google e NotebookLM, então revise as permissões do navegador antes de instalar.', idea:'Criar um fluxo de pesquisa que reúna YouTube e fontes da web no NotebookLM para resumir, comparar, organizar e consultar tudo como uma única base de conhecimento.'}},\n"
+
+          already_open_montage = "repo:'calesthio/OpenMontage'" in text
+          already_notebook = "repo:'VMSTE/notebooklm-web-importer'" in text
+          inserted_catalog = False
+
+          for line in lines:
+              out.append(line)
+              if "repo:'darkzOGx/youtube-automation-agent'" in line and not inserted_catalog:
+                  if not already_open_montage:
+                      out.append(open_montage_repo)
+                  if not already_notebook:
+                      out.append(notebook_repo)
+                  inserted_catalog = True
+
+          text = ''.join(out)
+
+          # Add the two video-focused projects to the Local Video Lab too.
+          if "repo:'calesthio/OpenMontage', name:'OpenMontage'" not in text:
+              marker = "            { repo:'OpenCut-app/OpenCut', name:'OpenCut', label:lang === 'pt' ? 'Editor local' : 'Local editor',"
+              card = "            { repo:'calesthio/OpenMontage', name:'OpenMontage', label:lang === 'pt' ? 'Produção com agentes' : 'Agentic production', text: lang === 'pt' ? 'Sistema de produção de vídeo com agentes para pesquisa, roteiro, geração de mídia, voz, legendas, edição e renderização final.' : 'Agentic video-production system for research, scripts, media generation, voice, subtitles, editing, and final rendering.' },\n"
+              text = text.replace(marker, card + marker, 1)
+
+          if "repo:'darkzOGx/youtube-automation-agent', name:'YouTube Automation'" not in text:
+              marker = "            { repo:'FujiwaraChoki/MoneyPrinterV2', name:'MoneyPrinter V2',"
+              card = "            { repo:'darkzOGx/youtube-automation-agent', name:'YouTube Automation', label:lang === 'pt' ? 'Canal automático' : 'Channel automation', text: lang === 'pt' ? 'Agentes para pesquisar temas, criar roteiros e thumbnails, otimizar SEO, agendar uploads, publicar e acompanhar o canal.' : 'Agents for topic research, scripts, thumbnails, SEO, upload scheduling, publishing, and channel analysis.' },\n"
+              text = text.replace(marker, card + marker, 1)
+
+          path.write_text(text, encoding='utf-8')
+
+      - name: Commit catalog update
+        run: |
+          if git diff --quiet; then
+            echo "Catalog already up to date."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/main.jsx
+          git commit -m "feat: add OpenMontage and NotebookLM importer"
+          git push

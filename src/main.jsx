@@ -442,6 +442,28 @@ const repositories = [
   { repo:'EvoLinkAI/ai-short-drama', category:'Video', api:'required', free:'mixed', accent:'#ec4899', en:{name:'AI Drama Studio', purpose:'An open-source novel-to-video workflow that turns stories into scripts, storyboards, generated scenes, voiceover, and short-drama videos.', why:'The app is open source and self-hostable, while many generation models it connects to can require provider API credits.', idea:'Build an automated short-film pipeline from story text through storyboard, characters, video shots, voice, and final assembly.'}, pt:{name:'AI Drama Studio', purpose:'Um fluxo open source de romance/roteiro para vídeo que cria análise de roteiro, storyboard, cenas, voz e vídeos curtos.', why:'O aplicativo é open source e auto-hospedável, mas vários modelos de geração conectados podem exigir créditos de API.', idea:'Criar um pipeline automatizado de curta-metragem, do texto e storyboard até personagens, cenas, voz e montagem final.'}},
 ];
 
+const fullyLocalRepos = new Set([
+  'FFmpeg/FFmpeg',
+  'comfyanonymous/ComfyUI',
+  'OpenCut-app/OpenCut',
+  'alyssaxuu/motionity',
+  'welovemedia/ffmate',
+  'ollama/ollama',
+  'ggml-org/whisper.cpp',
+  'SWivid/F5-TTS',
+  'RVC-Boss/GPT-SoVITS',
+  '2noise/ChatTTS',
+  'invoke-ai/InvokeAI',
+  'lllyasviel/Fooocus',
+  'jingyaogong/minimind',
+  'haidrrrry/claude-watermark-remover',
+  'NationalSecurityAgency/ghidra',
+  'AdguardTeam/AdGuardHome',
+  'praisenter/praisenter',
+  'sooryathejas/METATRON',
+  'pinokiocomputer/pinokio'
+]);
+
 const copy = {
   en: {
     brand: 'RepoVision', smallBrand: 'Open Source Intelligence', dashboard: 'Dashboard', repositories: 'Repositories', categories: 'Categories', about: 'About this collection', title: 'Build smarter with open source', subtitle: 'A curated, visual guide to useful GitHub repositories—what they do, what they cost, whether they need an API key, and what you can build with them.', search: 'Search repositories...', all: 'All projects', projects: 'Projects', liveStars: 'Live GitHub stars', freeProjects: 'Free core', apiReady: 'API optional or not needed', purpose: 'What it does', pricing: 'Cost & access', idea: 'What you can build', open: 'Open on GitHub', free: 'Free / self-hosted', mixed: 'Free core + possible costs', required: 'API key usually needed', optional: 'API key optional', no: 'No API key needed', refresh: 'Refresh', loading: 'Updating', noResults: 'No repositories match your search.', disclaimer: 'Always review the repository license, hardware requirements, security notes, and current provider pricing before production use.', menu: 'Open navigation', close: 'Close navigation', videoLab: 'Local Video Lab', videoTitle: 'Create AI videos on your own PC', videoSubtitle: 'A practical local-first path using the video tools already in this collection. Start with the easiest setup, then move to heavier cinematic models when your GPU can handle them.', videoStart: 'Best place to start', videoHardware: 'Hardware reality', videoSteps: 'Local workflow', videoOpen: 'Open GitHub', videoEasy: 'Easiest', videoAdvanced: 'Advanced', videoHeavy: 'Heavy GPU', videoStep1: 'Install a local launcher', videoStep1Text: 'Use Pinokio for guided installs or install ComfyUI directly. Both keep the generation workflow on your computer.', videoStep2: 'Choose a video model', videoStep2Text: 'Start with ComfyUI-compatible workflows. For advanced reference-to-video, avatars, or multimodal generation, try SkyReels V3, LongCat Video, or HuMo.', videoStep3: 'Generate locally', videoStep3Text: 'Download the model weights required by the repository, keep them on your drive, and render from your GPU. Larger models can need a lot of VRAM and storage.', videoStep4: 'Finish the video', videoStep4Text: 'Use FFmpeg for resizing, compression, audio, captions, frame rates, and final exports. OBS can record demos or screen-based content.', videoTip: 'Your GPU matters more than your CPU for AI video. If a model is too large, use a lighter workflow, lower resolution, fewer frames, or a quantized/offloaded version when the project supports it.'
@@ -467,6 +489,7 @@ function App() {
   const [lang, setLang] = useState('en');
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState('All');
+  const [localOnly, setLocalOnly] = useState(false);
   const [stars, setStars] = useState({});
   const [loading, setLoading] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -477,8 +500,9 @@ function App() {
   const categories = useMemo(() => ['All', ...new Set(repositories.map((item) => item.category))], []);
   const filtered = useMemo(() => repositories.filter((item) => {
     const searchable = `${item.repo} ${item.en.name} ${item.pt.name} ${item.en.purpose} ${item.pt.purpose} ${item.category}`.toLowerCase();
-    return (category === 'All' || item.category === category) && searchable.includes(query.toLowerCase());
-  }), [query, category]);
+    const matchesLocalMode = !localOnly || fullyLocalRepos.has(item.repo);
+    return matchesLocalMode && (category === 'All' || item.category === category) && searchable.includes(query.toLowerCase());
+  }), [query, category, localOnly]);
 
   const loadStars = async () => {
     setLoading(true);
@@ -537,6 +561,7 @@ function App() {
   }, []);
 
   const freeCount = repositories.filter((item) => item.free === 'free').length;
+  const localOnlyCount = repositories.filter((item) => fullyLocalRepos.has(item.repo)).length;
   const noApiCount = repositories.filter((item) => item.api !== 'required').length;
   const starTotal = Object.values(stars).reduce((sum, value) => sum + (value || 0), 0);
 
@@ -546,6 +571,17 @@ function App() {
 
     // After changing the sidebar filter, move the user directly to
     // the repositories section so the selected results are visible.
+    window.requestAnimationFrame(() => {
+      document.getElementById('repositories')?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start',
+      });
+    });
+  };
+
+  const toggleLocalOnly = () => {
+    setLocalOnly((current) => !current);
+    setMenuOpen(false);
     window.requestAnimationFrame(() => {
       document.getElementById('repositories')?.scrollIntoView({
         behavior: 'smooth',
@@ -574,6 +610,14 @@ function App() {
         <a className="nav-item" href="#voice-lab" onClick={() => setMenuOpen(false)}><Icon name="phone" size={18}/>{lang === 'pt' ? 'Servidor de Voz IA' : 'AI Phone Server'}</a>
         <a className="nav-item" href="#trading-lab" onClick={() => setMenuOpen(false)}><Icon name="chart" size={18}/>{lang === 'pt' ? 'Trading Diário' : 'Daily Trading'}</a>
         <a className="nav-item" href="#repositories" onClick={() => setMenuOpen(false)}><Icon name="github" size={18}/>{t.repositories}<span className="nav-count">{repositories.length}</span></a>
+        <button className={`nav-item local-only-filter ${localOnly ? 'active' : ''}`} onClick={toggleLocalOnly} title={lang === 'pt' ? 'Somente ferramentas que podem rodar localmente sem chave de API ou serviço de nuvem obrigatório' : 'Only tools that can run locally without an API key or required cloud service'}>
+          <Icon name="monitor" size={18}/>
+          <span className="local-filter-copy">
+            <strong>{lang === 'pt' ? '100% local e grátis' : '100% Local & Free'}</strong>
+            <small>{lang === 'pt' ? 'Sem API • sem nuvem obrigatória' : 'No API • no required cloud'}</small>
+          </span>
+          <span className="nav-count">{localOnlyCount}</span>
+        </button>
       </nav>
 
       <div className="nav-block category-list">
@@ -740,7 +784,7 @@ function App() {
 
       <section className="repositories-section" id="repositories">
         <div className="section-heading">
-          <div><span className="section-kicker">{category === 'All' ? t.all : category}</span><h2>{t.repositories}</h2></div>
+          <div><span className="section-kicker">{localOnly ? (lang === 'pt' ? '100% local e grátis' : '100% Local & Free') : (category === 'All' ? t.all : category)}</span><h2>{t.repositories}</h2></div>
           <div className="result-tools"><span>{filtered.length} {t.projects.toLowerCase()}</span><button onClick={loadStars} disabled={loading}><Icon name="refresh" size={16}/>{loading ? t.loading : t.refresh}</button></div>
         </div>
 
@@ -762,6 +806,7 @@ function App() {
                 <div className="tag-row">
                   <span className={`status-tag ${item.free === 'free' ? 'free' : 'mixed'}`}><Icon name="check" size={14}/>{item.free === 'free' ? t.free : t.mixed}</span>
                   <span className={`status-tag api-${item.api}`}><Icon name="key" size={14}/>{apiText}</span>
+                  {fullyLocalRepos.has(item.repo) && <span className="status-tag local-only"><Icon name="monitor" size={14}/>{lang === 'pt' ? '100% LOCAL' : '100% LOCAL'}</span>}
                 </div>
                 <p className="cost-note">{data.why}</p>
                 <div className="idea-box"><span><Icon name="spark" size={16}/>{t.idea}</span><p>{data.idea}</p></div>
